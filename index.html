@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>東南アジア 雨季・乾季マップ</title>
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+}
+
+body {
+  background: #f5f5f5;
+}
+
+#map {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* =========================
+   上部パネル
+========================= */
+
+#top-panel {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 1000;
+
+  background: rgba(255,255,255,0.96);
+
+  padding: 14px 16px;
+
+  border-radius: 12px;
+
+  box-shadow:
+    0 3px 15px rgba(0,0,0,0.18);
+
+  max-width: 360px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.control-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.control-row label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+select {
+  padding: 7px 10px;
+  border: 1px solid #ccc;
+  border-radius: 7px;
+  background: white;
+  font-size: 15px;
+}
+
+/* =========================
+   ランキング
+========================= */
+
+#ranking {
+  position: fixed;
+
+  top: 160px;
+  left: 12px;
+
+  z-index: 1000;
+
+  width: 350px;
+  max-height: calc(100vh - 180px);
+
+  overflow-y: auto;
+
+  background: rgba(255,255,255,0.96);
+
+  border-radius: 12px;
+
+  box-shadow:
+    0 3px 15px rgba(0,0,0,0.18);
+
+  padding: 14px;
+}
+
+.ranking-title {
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.rank-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 8px;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+}
+
+.rank-item:hover {
+  background: #f0f0f0;
+}
+
+.rank-number {
+  width: 26px;
+  height: 26px;
+
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #eee;
+
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.rank-name {
+  flex: 1;
+
+  font-size: 13px;
+}
+
+.rank-score {
+  font-size: 12px;
+  color: #666;
+}
+
+/* =========================
+   凡例
+========================= */
+
+#legend {
+  position: fixed;
+
+  bottom: 20px;
+  right: 20px;
+
+  z-index: 1000;
+
+  background: rgba(255,255,255,0.96);
+
+  padding: 12px;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 3px 15px rgba(0,0,0,0.18);
+
+  font-size: 12px;
+}
+
+.legend-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 5px 0;
+}
+
+.legend-color {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+}
+
+/* =========================
+   都市詳細
+========================= */
+
+.city-popup {
+  min-width: 240px;
+}
+
+.city-popup h3 {
+  margin:
+    0 0 8px 0;
+}
+
+.city-info {
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.month-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.month-table th,
+.month-table td {
+  padding: 5px;
+  border-bottom: 1px solid #ddd;
+  text-align: center;
+}
+
+.month-table th {
+  background: #f5f5f5;
+}
+
+.good {
+  color: #1976d2;
+  font-weight: bold;
+}
+
+.bad {
+  color: #d84315;
+  font-weight: bold;
+}
+
+.normal {
+  color: #777;
+}
+
+/* =========================
+   スマホ
+========================= */
+
+@media (max-width: 700px) {
+
+  #top-panel {
+    left: 8px;
+    top: 8px;
+    right: 8px;
+
+    max-width: none;
+  }
+
+  .title {
+    font-size: 17px;
+  }
+
+  #ranking {
+    left: 8px;
+    right: 8px;
+    top: 125px;
+
+    width: auto;
+
+    max-height: 230px;
+  }
+
+  #legend {
+    right: 8px;
+    bottom: 8px;
+  }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+
+<!-- =========================
+     上部
+========================= -->
+
+<div id="top-panel">
+
+  <div class="title">
+    🌏 東南アジア 雨季・乾季マップ
+  </div>
+
+  <div class="subtitle">
+    旅行する月を選ぶと、おすすめ都市を自動ランキング
+  </div>
+
+  <div class="control-row">
+
+    <label for="month">
+      旅行月
+    </label>
+
+    <select id="month">
+      <option value="1">1月</option>
+      <option value="2">2月</option>
+      <option value="3">3月</option>
+      <option value="4">4月</option>
+      <option value="5">5月</option>
+      <option value="6">6月</option>
+      <option value="7">7月</option>
+      <option value="8">8月</option>
+      <option value="9">9月</option>
+      <option value="10">10月</option>
+      <option value="11" selected>11月</option>
+      <option value="12">12月</option>
+    </select>
+
+  </div>
+
+</div>
+
+
+<!-- =========================
+     ランキング
+========================= -->
+
+<div id="ranking">
+
+  <div class="ranking-title">
+    🏆 今月おすすめランキング
+  </div>
+
+  <div id="ranking-list"></div>
+
+</div>
+
+
+<!-- =========================
+     凡例
+========================= -->
+
+<div id="legend">
+
+  <div class="legend-title">
+    月の気候
+  </div>
+
+  <div class="legend-row">
+    <div
+      class="legend-color"
+      style="background:#1976d2">
+    </div>
+    乾季・おすすめ
+  </div>
+
+  <div class="legend-row">
+    <div
+      class="legend-color"
+      style="background:#e64a19">
+    </div>
+    雨季
+  </div>
+
+  <div class="legend-row">
+    <div
+      class="legend-color"
+      style="background:#777">
+    </div>
+    中間
+  </div>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   1. 地図
+===================================================== */
+
+const map = L.map("map", {
+  zoomControl: true,
+  minZoom: 2,
+  maxZoom: 12
+}).setView(
+  [8, 108],
+  4
+);
+
+
+/* OpenStreetMap */
+
+L.tileLayer(
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  {
+    maxZoom: 19,
+    attribution:
+      '&copy; OpenStreetMap contributors'
+  }
+).addTo(map);
+
+
+/* =====================================================
+   2. 都市データ
+=====================================================
+
+   rain = 月別降水量 mm
+   temp = 月平均気温 ℃
+
+===================================================== */
+
+const cities = [
+
+/* ベトナム */
+
+{
+  name:"ハノイ",
+  country:"ベトナム",
+  lat:21.0285,
+  lng:105.8542,
+
+  rain:[
+    18,25,40,90,190,240,
+    300,320,260,130,45,20
+  ],
+
+  temp:[
+    17,18,21,25,29,30,
+    30,29,28,25,22,18
+  ]
+},
+
+{
+  name:"ダナン",
+  country:"ベトナム",
+  lat:16.0544,
+  lng:108.2022,
+
+  rain:[
+    85,30,25,35,55,90,
+    100,120,350,650,450,220
+  ],
+
+  temp:[
+    22,23,25,27,29,30,
+    30,29,27,25,24,22
+  ]
+},
+
+{
+  name:"ホーチミン",
+  country:"ベトナム",
+  lat:10.8231,
+  lng:106.6297,
+
+  rain:[
+    15,5,10,50,200,300,
+    300,270,330,260,120,50
+  ],
+
+  temp:[
+    27,28,29,30,30,29,
+    28,28,28,28,27,27
+  ]
+},
+
+
+/* ラオス */
+
+{
+  name:"ビエンチャン",
+  country:"ラオス",
+  lat:17.9757,
+  lng:102.6331,
+
+  rain:[
+    10,15,30,60,130,280,
+    300,280,230,90,20,10
+  ],
+
+  temp:[
+    21,24,27,30,29,29,
+    28,28,28,27,24,21
+  ]
+},
+
+{
+  name:"ルアンパバーン",
+  country:"ラオス",
+  lat:19.8833,
+  lng:102.1333,
+
+  rain:[
+    15,20,30,60,150,280,
+    290,300,180,70,20,10
+  ],
+
+  temp:[
+    20,23,26,29,29,28,
+    28,28,27,26,23,20
+  ]
+},
+
+
+/* タイ */
+
+{
+  name:"バンコク",
+  country:"タイ",
+  lat:13.7563,
+  lng:100.5018,
+
+  rain:[
+    10,20,30,70,180,160,
+    150,170,220,190,50,10
+  ],
+
+  temp:[
+    27,28,30,31,30,30,
+    29,29,28,28,27,26
+  ]
+},
+
+{
+  name:"チェンマイ",
+  country:"タイ",
+  lat:18.7883,
+  lng:98.9853,
+
+  rain:[
+    5,5,20,40,160,150,
+    170,190,220,120,40,10
+  ],
+
+  temp:[
+    21,23,27,30,29,28,
+    27,27,27,26,24,21
+  ]
+},
+
+{
+  name:"プーケット",
+  country:"タイ",
+  lat:7.8804,
+  lng:98.3923,
+
+  rain:[
+    35,30,40,140,250,270,
+    260,280,300,250,190,80
+  ],
+
+  temp:[
+    28,29,29,30,29,29,
+    28,28,28,28,28,28
+  ]
+},
+
+{
+  name:"サムイ島",
+  country:"タイ",
+  lat:9.5120,
+  lng:100.0136,
+
+  rain:[
+    60,30,40,70,110,120,
+    100,100,120,250,400,200
+  ],
+
+  temp:[
+    27,28,29,30,30,30,
+    29,29,29,28,27,27
+  ]
+},
+
+
+/* マレーシア */
+
+{
+  name:"クアラルンプール",
+  country:"マレーシア",
+  lat:3.1390,
+  lng:101.6869,
+
+  rain:[
+    160,140,190,240,180,130,
+    120,140,180,240,250,210
+  ],
+
+  temp:[
+    27,28,28,29,29,29,
+    28,28,28,28,27,27
+  ]
+},
+
+{
+  name:"ペナン",
+  country:"マレーシア",
+  lat:5.4141,
+  lng:100.3288,
+
+  rain:[
+    70,60,80,130,120,100,
+    100,120,180,240,220,140
+  ],
+
+  temp:[
+    27,28,29,29,29,29,
+    28,28,28,28,28,27
+  ]
+},
+
+
+/* シンガポール */
+
+{
+  name:"シンガポール",
+  country:"シンガポール",
+  lat:1.3521,
+  lng:103.8198,
+
+  rain:[
+    250,160,170,170,160,130,
+    140,140,170,180,250,270
+  ],
+
+  temp:[
+    27,28,28,28,28,28,
+    28,28,28,28,27,27
+  ]
+},
+
+
+/* フィリピン */
+
+{
+  name:"マニラ",
+  country:"フィリピン",
+  lat:14.5995,
+  lng:120.9842,
+
+  rain:[
+    15,10,10,25,100,250,
+    420,430,350,220,120,60
+  ],
+
+  temp:[
+    26,27,28,30,30,29,
+    29,29,28,28,27,26
+  ]
+},
+
+{
+  name:"セブ",
+  country:"フィリピン",
+  lat:10.3157,
+  lng:123.8854,
+
+  rain:[
+    80,50,50,40,80,130,
+    150,140,150,170,150,120
+  ],
+
+  temp:[
+    27,27,28,29,29,29,
+    28,28,28,28,28,27
+  ]
+},
+
+
+/* インドネシア */
+
+{
+  name:"ジャカルタ",
+  country:"インドネシア",
+  lat:-6.2088,
+  lng:106.8456,
+
+  rain:[
+    300,250,220,180,110,80,
+    60,50,60,100,150,220
+  ],
+
+  temp:[
+    27,27,28,28,28,28,
+    28,28,28,28,27,27
+  ]
+},
+
+{
+  name:"バリ",
+  country:"インドネシア",
+  lat:-8.3405,
+  lng:115.0920,
+
+  rain:[
+    350,280,220,150,100,70,
+    60,50,60,100,180,300
+  ],
+
+  temp:[
+    27,27,28,28,27,27,
+    26,26,27,27,27,27
+  ]
+},
+
+
+/* ミャンマー */
+
+{
+  name:"ヤンゴン",
+  country:"ミャンマー",
+  lat:16.8409,
+  lng:96.1735,
+
+  rain:[
+    5,5,10,40,300,500,
+    600,500,400,200,60,10
+  ],
+
+  temp:[
+    25,27,30,31,30,29,
+    28,28,28,28,27,25
+  ]
+}
+
+];
+
+
+/* =====================================================
+   3. マーカー管理
+===================================================== */
+
+let markers = [];
+
+
+/* =====================================================
+   4. 気候判定
+===================================================== */
+
+function getClimateStatus(city, monthIndex) {
+
+  const rain = city.rain[monthIndex];
+  const temp = city.temp[monthIndex];
+
+  /*
+    旅行者向けの簡易判定。
+
+    かなり雨が少ない
+    ＋
+    20〜32℃程度
+  */
+
+  if (
+    rain <= 100 &&
+    temp >= 20 &&
+    temp <= 32
+  ) {
+
+    return "dry";
+
+  }
+
+  if (rain >= 200) {
+
+    return "rain";
+
+  }
+
+  return "normal";
+
+}
+
+
+/* =====================================================
+   5. 色
+===================================================== */
+
+function getColor(status) {
+
+  if (status === "dry") {
+
+    return "#1976d2";
+
+  }
+
+  if (status === "rain") {
+
+    return "#e64a19";
+
+  }
+
+  return "#777";
+
+}
+
+
+/* =====================================================
+   6. ランキングスコア
+===================================================== */
+
+function getScore(city, monthIndex) {
+
+  const rain = city.rain[monthIndex];
+  const temp = city.temp[monthIndex];
+
+  /*
+    雨が少ないほど高得点
+
+    快適気温
+    24〜30℃を中心に評価
+  */
+
+  let rainScore;
+
+  if (rain <= 50) {
+
+    rainScore = 100;
+
+  } else if (rain <= 100) {
+
+    rainScore = 90;
+
+  } else if (rain <= 150) {
+
+    rainScore = 75;
+
+  } else if (rain <= 200) {
+
+    rainScore = 55;
+
+  } else if (rain <= 300) {
+
+    rainScore = 30;
+
+  } else {
+
+    rainScore = 10;
+
+  }
+
+
+  let tempScore;
+
+  if (temp >= 24 && temp <= 30) {
+
+    tempScore = 100;
+
+  } else if (temp >= 21 && temp <= 32) {
+
+    tempScore = 80;
+
+  } else if (temp >= 18 && temp <= 34) {
+
+    tempScore = 60;
+
+  } else {
+
+    tempScore = 30;
+
+  }
+
+
+  /*
+    降水量を60%
+    気温を40%
+  */
+
+  return Math.round(
+    rainScore * 0.6 +
+    tempScore * 0.4
+  );
+
+}
+
+
+/* =====================================================
+   7. ポップアップ
+===================================================== */
+
+function createPopup(city, monthIndex) {
+
+  const month = monthIndex + 1;
+
+  let html = `
+
+    <div class="city-popup">
+
+      <h3>
+        ${city.name}
+      </h3>
+
+      <div class="city-info">
+
+        <b>${city.country}</b><br>
+
+        ${month}月の平均気温：
+        <b>${city.temp[monthIndex]}℃</b><br>
+
+        ${month}月の降水量：
+        <b>${city.rain[monthIndex]} mm</b>
+
+      </div>
+
+      <hr>
+
+      <b>12ヶ月の気候</b>
+
+      <table class="month-table">
+
+        <tr>
+          <th>月</th>
+          <th>気温</th>
+          <th>雨</th>
+        </tr>
+
+  `;
+
+
+  for (let i = 0; i < 12; i++) {
+
+    const status =
+      getClimateStatus(city, i);
+
+    let className =
+      status === "dry"
+        ? "good"
+        : status === "rain"
+        ? "bad"
+        : "normal";
+
+
+    html += `
+
+      <tr>
+
+        <td>${i + 1}月</td>
+
+        <td>
+          ${city.temp[i]}℃
+        </td>
+
+        <td class="${className}">
+          ${city.rain[i]}mm
+        </td>
+
+      </tr>
+
+    `;
+
+  }
+
+
+  html += `
+
+      </table>
+
+    </div>
+
+  `;
+
+  return html;
+
+}
+
+
+/* =====================================================
+   8. 地図更新
+===================================================== */
+
+function updateMap() {
+
+  const month =
+    parseInt(
+      document.getElementById("month").value,
+      10
+    );
+
+  const monthIndex =
+    month - 1;
+
+
+  /* 既存マーカー削除 */
+
+  markers.forEach(marker => {
+
+    map.removeLayer(marker);
+
+  });
+
+  markers = [];
+
+
+  /* 都市を表示 */
+
+  cities.forEach(city => {
+
+    const rainfall =
+      city.rain[monthIndex];
+
+    const temperature =
+      city.temp[monthIndex];
+
+    const status =
+      getClimateStatus(
+        city,
+        monthIndex
+      );
+
+    const color =
+      getColor(status);
+
+
+    /*
+      降水量によって円サイズ変更
+    */
+
+    const radius =
+      Math.max(
+        8,
+        Math.min(
+          32,
+          7 + Math.sqrt(rainfall) * 1.3
+        )
+      );
+
+
+    const marker =
+      L.circleMarker(
+        [city.lat, city.lng],
+        {
+
+          radius: radius,
+
+          fillColor: color,
+
+          color: "#ffffff",
+
+          weight: 2,
+
+          opacity: 1,
+
+          fillOpacity: 0.78
+
+        }
+      );
+
+
+    marker.bindPopup(
+      createPopup(
+        city,
+        monthIndex
+      )
+    );
+
+
+    marker.addTo(map);
+
+    markers.push(marker);
+
+  });
+
+
+  updateRanking(monthIndex);
+
+}
+
+
+/* =====================================================
+   9. ランキング
+===================================================== */
+
+function updateRanking(monthIndex) {
+
+  const ranking =
+    cities
+      .map(city => {
+
+        return {
+
+          city: city,
+
+          score:
+            getScore(
+              city,
+              monthIndex
+            )
+
+        };
+
+      })
+      .sort(
+        (a,b) =>
+          b.score - a.score
+      );
+
+
+  const container =
+    document.getElementById(
+      "ranking-list"
+    );
+
+
+  container.innerHTML = "";
+
+
+  ranking.forEach(
+    (item, index) => {
+
+      const city =
+        item.city;
+
+
+      const div =
+        document.createElement(
+          "div"
+        );
+
+
+      div.className =
+        "rank-item";
+
+
+      div.innerHTML = `
+
+        <div class="rank-number">
+          ${index + 1}
+        </div>
+
+        <div class="rank-name">
+
+          <b>
+            ${city.name}
+          </b>
+
+          <br>
+
+          <small>
+            ${city.temp[monthIndex]}℃
+            /
+            ${city.rain[monthIndex]}mm
+          </small>
+
+        </div>
+
+        <div class="rank-score">
+          ${item.score}点
+        </div>
+
+      `;
+
+
+      /*
+        ランキングをクリックすると
+        地図上の都市を開く
+      */
+
+      div.addEventListener(
+        "click",
+        () => {
+
+          const markerIndex =
+            cities.indexOf(city);
+
+
+          const marker =
+            markers[markerIndex];
+
+
+          if (marker) {
+
+            map.setView(
+              [
+                city.lat,
+                city.lng
+              ],
+              7
+            );
+
+
+            marker.openPopup();
+
+          }
+
+        }
+      );
+
+
+      container.appendChild(div);
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   10. 月変更
+===================================================== */
+
+document
+  .getElementById("month")
+  .addEventListener(
+    "change",
+    updateMap
+  );
+
+
+/* =====================================================
+   11. 初期表示
+===================================================== */
+
+updateMap();
+
+
+/* =====================================================
+   12. 地図サイズ再計算
+===================================================== */
+
+setTimeout(
+  () => {
+
+    map.invalidateSize();
+
+  },
+  300
+);
+
+window.addEventListener(
+  "resize",
+  () => {
+
+    map.invalidateSize();
+
+  }
+);
+
+</script>
+
+</body>
+</html>
